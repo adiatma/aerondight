@@ -1,5 +1,6 @@
 use error_chain::error_chain;
 use std::{env, path};
+use unzpack::Unzpack;
 
 mod lib;
 
@@ -15,6 +16,7 @@ async fn download_commandlinetools() -> Result<()> {
     lib::fetch(target.to_string(), "/Users/adiatma/Desktop/android-sdk.zip".to_string())
         .await
         .unwrap();
+    Unzpack::extract("/Users/adiatma/Desktop/android-sdk.zip", "/Users/adiatma/Desktop/android-sdk").unwrap();
     Ok(())
 }
 

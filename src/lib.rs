@@ -54,7 +54,7 @@ pub async fn fetch(url: String, file_name: String) -> Result<()> {
     let pb = ProgressBar::new(steps);
 
     // incrementing one step of the progress bar each time.
-    let mut intv = tokio::time::interval(std::time::Duration::from_millis(10));
+    let mut intv = tokio::time::interval(std::time::Duration::from_millis(15));
     for _ in 0..steps {
         intv.tick().await;
         pb.inc(1);
