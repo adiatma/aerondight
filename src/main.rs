@@ -12,7 +12,7 @@ error_chain! {
 
 async fn download_commandlinetools() -> Result<()> {
     let target = "https://dl.google.com/android/repository/commandlinetools-mac-6858069_latest.zip";
-    lib::fetch(target.to_string(), "android-sdk.zip".to_string())
+    lib::fetch(target.to_string(), "/Users/adiatma/Desktop/android-sdk.zip".to_string())
         .await
         .unwrap();
     Ok(())
@@ -25,14 +25,14 @@ async fn main() {
         Some(x) => {
             if x == "install" {
                 if path::Path::new("/Users/adiatma/Library/Android").exists() {
-                    download_commandlinetools().await.unwrap()
+                    download_commandlinetools().await.unwrap();
+                    lib::exec("ls /Users/adiatma/Desktop")
                 }
             }
 
             if x == "check" {
                 lib::exec("adb devices");
-                lib::exec("android list target");
-                lib::exec("ls -a")
+                lib::exec("android list target")
             }
         }
         _ => println!("Usage: aerondight <install|check>"),
