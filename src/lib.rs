@@ -1,4 +1,13 @@
+use error_chain::error_chain;
+use indicatif::ProgressBar;
 use std::process::Command;
+
+error_chain! {
+     foreign_links {
+         Io(std::io::Error);
+         HttpRequest(reqwest::Error);
+     }
+}
 
 fn single_cmd(base: &'static str) {
     let output = Command::new(base)
@@ -46,4 +55,27 @@ pub fn exec(command: &'static str) {
     } else {
         single_cmd(cmd.get(0).unwrap())
     }
+}
+
+pub async fn fetch(url: String, file_name: String) -> Result<()> {
+    // Plain progress bar, totaling 1024 steps.
+    let steps = 1024;
+    let pb = ProgressBar::new(steps);
+
+    // incrementing one step of the progress bar each time.
+    let mut intv = tokio::time::interval(std::time::Duration::from_millis(10));
+    for _ in 0..steps {
+        intv.tick().await;
+        pb.inc(1);
+    }
+
+    // handle download file with the url
+    let res = reqwest::get(url).await?;
+    let mut file = std::fs::File::create(file_name)?;
+    let mut content = std::io::Cursor::new(res.bytes().await?);
+    std::io::copy(&mut content, &mut file)?;
+
+    // Mark the progress bar as finished.
+    pb.finish();
+    Ok(())
 }
