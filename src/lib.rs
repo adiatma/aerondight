@@ -9,15 +9,10 @@ error_chain! {
      }
 }
 
-fn _cmd(base: &'static str, args: Option<Vec<&str>>) {
+fn _cmd(base: &str, args: Option<Vec<&str>>) {
     let output = match args {
-        Some(arg) => Command::new(base)
-            .args(arg)
-            .output()
-            .unwrap(),
-        _ => Command::new(base)
-            .output()
-            .unwrap()
+        Some(arg) => Command::new(base).args(arg).output().unwrap(),
+        _ => Command::new(base).output().unwrap(),
     };
 
     if output.status.success() {
@@ -31,7 +26,7 @@ fn _cmd(base: &'static str, args: Option<Vec<&str>>) {
 
 // Example usage:
 // exec("adb devices")
-pub fn exec(command: &'static str) {
+pub fn exec(command: &str) {
     let cmd: Vec<&str> = command.split(" ").collect();
 
     if cmd.len() > 1 {
