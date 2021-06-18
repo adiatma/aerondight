@@ -65,3 +65,21 @@ pub async fn fetch(url: String, file_name: String) -> Result<()> {
     pb.finish();
     Ok(())
 }
+
+pub fn find_it<P>(bin_name: P) -> Option<std::path::PathBuf>
+where
+    P: AsRef<std::path::Path>,
+{
+    std::env::var_os("PATH").and_then(|paths| {
+        std::env::split_paths(&paths)
+            .filter_map(|dir| {
+                let full_path = dir.join(&bin_name);
+                if full_path.is_file() {
+                    Some(full_path)
+                } else {
+                    None
+                }
+            })
+            .next()
+    })
+}

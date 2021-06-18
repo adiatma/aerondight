@@ -46,7 +46,7 @@ impl Aerondight {
     }
 }
 
-async fn download_commandlinetools() -> Result<()> {
+async fn download_and_unzip_cmdlinetools() -> Result<()> {
     if let Some(user_dirs) = UserDirs::new() {
         let aerondight_config = Aerondight::default();
 
@@ -79,12 +79,49 @@ async fn main() {
     match args.get(1) {
         Some(x) => {
             if x == "install" {
-                if let Some(user_dirs) = UserDirs::new() {
-                    let cmd_to_list_download: &str =
-                        &format!("ls {}", user_dirs.download_dir().unwrap().display()).to_owned();
-                    download_commandlinetools().await.unwrap();
-                    lib::exec(cmd_to_list_download);
-                    lib::exec("avdmanager list target")
+                // check java
+                match lib::find_it("java") {
+                    Some(x) => println!("Installed: {:?} ✅", x),
+                    None => {
+                        println!("Process to install java");
+                        lib::exec("brew search adoptopenjdk/openjdk/adoptopenjdk8");
+                        lib::exec("brew install adoptopenjdk/openjdk/adoptopenjdk8")
+                    }
+                };
+
+                // check sdkmanager
+                match lib::find_it("sdkmanager") {
+                    Some(x) => println!("Installed: {:?} ✅", x),
+                    None => {
+                        if let Some(user_dirs) = UserDirs::new() {
+                            download_and_unzip_cmdlinetools().await.unwrap();
+
+                            let display_download_dir = user_dirs.download_dir().unwrap().display();
+                            let cmd_to_list_download: &str =
+                                &format!("ls {}", display_download_dir).to_owned();
+                            lib::exec(cmd_to_list_download);
+
+                            use std::fs::{copy, create_dir_all};
+
+                            let lib_directory =
+                                format!("{}/Library", user_dirs.home_dir().display());
+
+                            create_dir_all(format!(
+                                "{}/Android/sdk/cmdline-tools/latest",
+                                lib_directory
+                            ))
+                            .unwrap();
+                            copy(
+                                format!("{}/android-sdk/cmdline-tools", display_download_dir),
+                                format!("{}/Android/sdk/cmdline-tools/latest", lib_directory),
+                            )
+                            .unwrap();
+                            let cmd_to_list_sdk: &str =
+                                &format!("ls {}/Android/sdk/cmdline-tools/latest", lib_directory)
+                                    .to_owned();
+                            lib::exec(cmd_to_list_sdk)
+                        }
+                    }
                 }
             }
         }
