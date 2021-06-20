@@ -14,7 +14,7 @@ error_chain! {
 }
 
 struct Aerondight {
-    download_url: String,
+    download_url: String
 }
 
 impl std::default::Default for Aerondight {
@@ -24,7 +24,7 @@ impl std::default::Default for Aerondight {
                 "https://dl.google.com/android/repository/commandlinetools-{}-{}_latest.zip",
                 Self::get_os_type(),
                 Self::get_version(),
-            ),
+            )
         }
     }
 }
@@ -43,6 +43,15 @@ impl Aerondight {
 
     fn get_version() -> String {
         String::from("7302050")
+    }
+
+    fn setup_android_path() -> String {
+        if let Some(user_dirs) = UserDirs::new() {
+            env::set_var("android_path", format!("{}/Library/Android/sdk", user_dirs.home_dir().display()));
+            env::var("android_path").unwrap().to_string()
+        } else {
+            String::new()
+        }
     }
 }
 
@@ -70,29 +79,32 @@ async fn download_and_unzip_cmdlinetools() -> Result<()> {
         )
         .unwrap();
     };
+
     Ok(())
 }
 
 #[tokio::main]
 async fn main() {
+    Aerondight::setup_android_path();
     let args: Vec<String> = env::args().collect();
     match args.get(1) {
         Some(x) => {
             if x == "install" {
-                // check java
+                // check java binary in your machine, if exists skip installation progcess
                 match lib::find_it("java") {
                     Some(x) => println!("Installed: {:?} ✅", x),
                     None => {
-                        println!("Process to install java");
+                        // install adoptopenjdk8
                         lib::exec("brew search adoptopenjdk/openjdk/adoptopenjdk8");
                         lib::exec("brew install adoptopenjdk/openjdk/adoptopenjdk8")
                     }
                 };
 
-                // check sdkmanager
+                // check sdkmanager binary in your machine, if exists skip installation process
                 match lib::find_it("sdkmanager") {
                     Some(x) => println!("Installed: {:?} ✅", x),
                     None => {
+                        // check local user directories base on your OS.
                         if let Some(user_dirs) = UserDirs::new() {
                             download_and_unzip_cmdlinetools().await.unwrap();
 
@@ -106,16 +118,19 @@ async fn main() {
                             let lib_directory =
                                 format!("{}/Library", user_dirs.home_dir().display());
 
+                            // create directory '$HOME/Android/sdk.cmdline-tools/latest'
                             create_dir_all(format!(
                                 "{}/Android/sdk/cmdline-tools/latest",
                                 lib_directory
                             ))
                             .unwrap();
+                            // copy android-sdk from dowload directory to lib directory.
                             copy(
                                 format!("{}/android-sdk/cmdline-tools", display_download_dir),
                                 format!("{}/Android/sdk/cmdline-tools/latest", lib_directory),
                             )
                             .unwrap();
+                            // show list of cmdline-tools
                             let cmd_to_list_sdk: &str =
                                 &format!("ls {}/Android/sdk/cmdline-tools/latest", lib_directory)
                                     .to_owned();
